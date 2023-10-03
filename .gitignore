@@ -1,0 +1,29 @@
+__pycache__/
+
+# Environments
+.env
+.venv
+env/
+venv/
+venvcpu/
+ENV/
+env.bak/
+venv.bak/
+venvtest/
+
+# Project specific
+user/
+temp/
+debug/
+ignore/
+build/
+log/
+dist/
+output/
+export/
+
+# created when building
+LICENSE.txt 
+requirements_temp.txt
+*.spec
+SpeechTranslate.egg-info/
