@@ -2,3 +2,6 @@ notify-py==0.3.42
 pystray==0.19.5
 PyAudio==0.2.13
 webrtcvad==2.0.10
+pygame==2.5.2
+requests==2.31.0
+numpy==1.26.0

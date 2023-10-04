@@ -1,3 +1,5 @@
+from os import startfile
+from subprocess import Popen
 import tkinter as tk
 from random import choice
 from tkinter import ttk
@@ -60,6 +62,26 @@ def OpenUrl(url: str):
     except Exception as e:
         logger.exception(e)
         nativeNotify("Error", "Cannot open the url specified.")
+
+
+def start_file(filename: str):
+    """
+    Open a folder or file in the default application.
+    """
+    try:
+        startfile(filename)
+    except FileNotFoundError:
+        logger.exception("Cannot find the file specified.")
+        nativeNotify("Error", "Cannot find the file specified.")
+    except Exception:
+        try:
+            Popen(["xdg-open", filename])
+        except FileNotFoundError:
+            logger.exception("Cannot open the file specified.")
+            nativeNotify("Error", "Cannot find the file specified.")
+        except Exception as e:
+            logger.exception("Error: " + str(e))
+            nativeNotify("Error", f"Uncaught error {str(e)}")
 
 
 def get_channel_int(channel_string: str):

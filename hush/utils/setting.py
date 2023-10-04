@@ -12,6 +12,7 @@ from hush.custom_logging import logger
 default_setting = {
     "version": __setting_version__,
     "checkUpdateOnStart": True,
+    "keep_log": False,
     # ------------------ #
     "hostAPI": "",
     "device": "",
@@ -21,7 +22,7 @@ default_setting = {
     "custom_beep_path": "",
     "beep_volume": 80,
     "beep_when_reach": -8.0,  # db
-    "mw_size": "500x250"
+    "mw_size": "500x250",
 }
 
 

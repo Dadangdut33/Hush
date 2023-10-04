@@ -4,7 +4,7 @@ from .utils.setting import SettingJson
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from .main import AppTray, Hush
+    from .app import AppTray, Hush
 
 sj: SettingJson = SettingJson(os.path.join(dir_user, "setting.json"), dir_user, [dir_log])
 

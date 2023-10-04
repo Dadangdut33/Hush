@@ -1,6 +1,6 @@
 import os
 from threading import Thread
-from tkinter import Tk, ttk, Menu
+from tkinter import Tk, ttk, Menu, BooleanVar
 from signal import SIGINT, signal
 from typing import Dict, Literal  # Import the signal module to handle Ctrl+C
 
@@ -18,9 +18,11 @@ from .components.message import mbox, ask_file_sound
 from .utils.audio.device import (
     get_default_host_api, get_default_input_device, get_device_details, get_db, get_host_apis, get_input_devices
 )
-from .utils.helper import OpenUrl, emoji_img, get_channel_int, nativeNotify, popup_menu, similar
+from .utils.helper import (
+    OpenUrl, bind_focus_recursively, emoji_img, get_channel_int, nativeNotify, popup_menu, similar, start_file
+)
 
-from ._path import app_icon, app_icon_missing, beep_default
+from ._path import app_icon, app_icon_missing, beep_default, dir_log
 from ._version import __version__
 from .globals import gc, sj
 from .custom_logging import logger
@@ -126,15 +128,27 @@ class Hush:
 
         self.option_menu = Menu(self.menu, tearoff=False)
         self.beep_submenu = Menu(self.option_menu, tearoff=False)
-        self.option_menu.add_cascade(label="Beep option", menu=self.beep_submenu)
         self.beep_submenu.add_command(label="Change beep sound", command=lambda: self.change_beep())
         self.beep_submenu.add_command(label="Set to default", command=lambda: self.beep_set_default())
+
+        self.log_submenu = Menu(self.option_menu, tearoff=False)
+        self.keep_log = BooleanVar(self.root, sj.cache["keep_log"])
+        self.log_submenu.add_command(label="Open log folder", command=lambda: start_file(dir_log))
+        self.log_submenu.add_checkbutton(
+            label="Keep log", variable=self.keep_log, command=lambda: sj.save_key("keep_log", self.keep_log.get())
+        )
+        self.log_submenu.add_command(label="Clear log", command=lambda: self.clear_log())
+
+        self.option_menu.add_cascade(label="Beep option", menu=self.beep_submenu)
+        self.option_menu.add_cascade(label="Log", menu=self.log_submenu)
         self.option_menu.add_command(label="Reset all setting to default", command=lambda: self.reset_all_setting())
+
         self.menu.add_cascade(label="Option", menu=self.option_menu)
 
         self.help_menu = Menu(self.menu, tearoff=False)
         self.help_menu.add_command(label="About", command=self.about)
         self.help_menu.add_command(label="Check for updates", command=lambda: self.check_for_update())
+        self.help_menu.add_command(label="Visit App Repository", command=lambda: OpenUrl("https://github.com/Dadangdut33/Hush/"))
         self.menu.add_cascade(label="Help", menu=self.help_menu)
 
         # frame is divided into 3 main part
@@ -329,12 +343,15 @@ class Hush:
         self.btn_toggle_start_hush.pack(side="right", padx=5)
 
         # --------------------------
+        bind_focus_recursively(self.root, self.root)
         self.cb_input_device_init()
         self.init_mixer_with_check()
         self.slider_beep_when.set(sj.cache["beep_when_reach"])  # after everything is set
         gc.running_after_id = self.root.after(1000, self.is_running_poll)
         if sj.cache["checkUpdateOnStart"]:
             self.check_for_update(onStart=True)
+        if not sj.cache["keep_log"]:
+            self.clear_log(on_start=True)
 
     # ----------------------------------------------------------------------
     def show_window(self):
@@ -380,6 +397,30 @@ class Hush:
             os._exit(0)
         except SystemExit:
             logger.info("Exit successful")
+
+    def clear_log(self, on_start=False):
+        if not on_start:
+            if mbox(
+                "Confirmation",
+                "Are you sure you want to clear log directory? This action cannot be undone",
+                3,
+                self.root,
+            ):
+                # clear log
+                self.clear_the_log()
+                mbox("Success", "Log directory has been cleared", 0, self.root)
+        else:
+            # clear log
+            self.clear_the_log()
+
+    def clear_the_log(self):
+        try:
+            logger.info("Clearing log directory...")
+            for f in os.listdir(dir_log):
+                os.remove(os.path.join(dir_log, f))
+        except Exception as e:
+            if "it is being used by another process" not in str(e):
+                logger.exception(e)
 
     # ----------------------------------------------------------------------
     def about(self):
