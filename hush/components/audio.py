@@ -3,7 +3,16 @@ from tkinter import Canvas
 
 class AudioMeter(Canvas):
     def __init__(
-        self, master, root, show_threshold: bool, threshold: float, min: float, max: float, auto_resize=False, **kwargs
+        self,
+        master,
+        root,
+        show_threshold: bool,
+        threshold: float,
+        min: float,
+        max: float,
+        auto_resize=False,
+        performance_mode=True,
+        **kwargs
     ):
         super().__init__(master, **kwargs)
 
@@ -11,16 +20,20 @@ class AudioMeter(Canvas):
         self.min = min
         self.max = max
         self.show_threshold = show_threshold
-        self.db = -80
+        self.db = min
+        self.prev_db = -60
         self.threshold = threshold
         self.running = False
         self.recording = False
         self.after_id = None
+        self.performance_mode = performance_mode
 
         self.meter_update()
-        self.root.bind("<Configure>", self.resize_x_canvas)
+        if auto_resize:
+            self.root.bind("<Configure>", self.resize_x_canvas)
 
     def set_db(self, db):
+        self.prev_db = self.db
         self.db = db
 
     def set_max(self, max):
@@ -34,6 +47,9 @@ class AudioMeter(Canvas):
 
     def set_recording(self, recording):
         self.recording = recording
+
+    def set_performance_mode(self, performance_mode):
+        self.performance_mode = performance_mode
 
     def start(self):
         self.running = True
@@ -51,6 +67,10 @@ class AudioMeter(Canvas):
             self.after_id = self.root.after(10, self.update_visual)
 
     def meter_update(self):
+        # if performance mode, check wether db is still near prev_db
+        if self.performance_mode and abs(self.db - self.prev_db) <= 3:
+            return
+
         # Map loudness to the canvas width
         loudness_percentage = (self.db - self.min) / (self.max - self.min)
         bar_width = int(self.winfo_width() * loudness_percentage)

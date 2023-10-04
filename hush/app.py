@@ -97,8 +97,8 @@ class Hush:
         gc.mw = self
         self.checking = False
         self.notified = False
-        self.max_v = 0
-        self.min_v = 0
+        self.max_v = MAX_THRESHOLD
+        self.min_v = MIN_THRESHOLD
         self.vad = Vad() if sj.cache["vad_mode"] == "Off" else Vad(int(sj.cache["vad_mode"]))
         self.is_speech = False
         self.detail_device = None
@@ -132,15 +132,26 @@ class Hush:
         self.beep_submenu.add_command(label="Set to default", command=lambda: self.beep_set_default())
 
         self.log_submenu = Menu(self.option_menu, tearoff=False)
-        self.keep_log = BooleanVar(self.root, sj.cache["keep_log"])
+        self.var_keep_log = BooleanVar(self.root, sj.cache["keep_log"])
         self.log_submenu.add_command(label="Open log folder", command=lambda: start_file(dir_log))
         self.log_submenu.add_checkbutton(
-            label="Keep log", variable=self.keep_log, command=lambda: sj.save_key("keep_log", self.keep_log.get())
+            label="Keep log", variable=self.var_keep_log, command=lambda: sj.save_key("keep_log", self.var_keep_log.get())
         )
         self.log_submenu.add_command(label="Clear log", command=lambda: self.clear_log())
 
+        self.audio_submenu = Menu(self.option_menu, tearoff=False)
+        self.var_performance_mode = BooleanVar(self.root, sj.cache["performance_mode"])
+        self.var_no_visual = BooleanVar(self.root, sj.cache["no_visual"])
+        self.audio_submenu.add_checkbutton(
+            label="Performance mode", variable=self.var_performance_mode, command=lambda: self.set_performance_mode()
+        )
+        self.audio_submenu.add_checkbutton(
+            label="Turn off audio visualization", variable=self.var_no_visual, command=lambda: self.toggle_visual()
+        )
+
         self.option_menu.add_cascade(label="Beep option", menu=self.beep_submenu)
-        self.option_menu.add_cascade(label="Log", menu=self.log_submenu)
+        self.option_menu.add_cascade(label="Audio meter", menu=self.audio_submenu)
+        self.option_menu.add_cascade(label="Logger", menu=self.log_submenu)
         self.option_menu.add_command(label="Reset all setting to default", command=lambda: self.reset_all_setting())
 
         self.menu.add_cascade(label="Option", menu=self.option_menu)
@@ -264,7 +275,7 @@ class Hush:
         self.lbl_vad_mode.pack(side="left", padx=5)
 
         self.cb_vad_mode = ttk.Combobox(self.mf_2_1, values=["Off", "1", "2", "3"], state="readonly")
-        self.cb_vad_mode.set("3")
+        self.cb_vad_mode.set(sj.cache["vad_mode"])
         self.cb_vad_mode.bind("<<ComboboxSelected>>", self.vad_mode_change)
         self.cb_vad_mode.pack(side="left", padx=5)
         tk_tooltips(
@@ -274,10 +285,12 @@ class Hush:
             wrapLength=350,
         )
 
-        self.vol_low_emoji = emoji_img(16, "     🔉")
-        self.vol_high_emoji = emoji_img(16, "     🔊")
-        self.lbl_volume_low = ttk.Label(self.mf_2_1, text="100", font="TkDefaultFont 9 bold", image=self.vol_low_emoji)
-        self.lbl_volume_low.pack(side="left", padx=5)
+        self.vol_low_emoji = emoji_img(16, "🔉")
+        self.vol_high_emoji = emoji_img(16, "🔊")
+        self.lbl_volume_low = ttk.Label(
+            self.mf_2_1, text="Volume", font="TkDefaultFont 9 bold", image=self.vol_low_emoji, compound="right"
+        )
+        self.lbl_volume_low.pack(side="left", padx=(5, 2))
 
         self.slider_volume = ttk.Scale(
             self.mf_2_1,
@@ -288,12 +301,12 @@ class Hush:
             command=lambda e: self.lbl_volume_high.configure(text=round(float(e))),
         )
         self.slider_volume.bind("<ButtonRelease-1>", lambda e: sj.save_key("beep_volume", float(self.slider_volume.get())))
-        self.slider_volume.pack(side="left", padx=5, expand=True, fill="x")
+        self.slider_volume.pack(side="left", padx=0, expand=True, fill="x")
 
         self.lbl_volume_high = ttk.Label(
             self.mf_2_1, text=round(sj.cache["beep_volume"]), image=self.vol_high_emoji, compound="left"
         )
-        self.lbl_volume_high.pack(side="left", padx=5)
+        self.lbl_volume_high.pack(side="left", padx=(2, 5))
 
         # -- mf_2_2
         self.lbl_beep_when = ttk.Label(self.mf_2_2, text="Beep when db is", font="TkDefaultFont 9 bold", width=14)
@@ -320,16 +333,17 @@ class Hush:
             self.root,
             width=300,
             height=40,
-            min=-80,
-            max=0,
+            min=MIN_THRESHOLD,
+            max=MAX_THRESHOLD,
             threshold=sj.cache["beep_when_reach"],
             show_threshold=True,
-            auto_resize=True
+            auto_resize=True,
+            performance_mode=sj.cache["performance_mode"],
         )
         self.audio_meter.pack(side="top", padx=5, pady=(5, 0), expand=True, fill="both")
 
         # -- mf_2_4
-        self.divider_2 = ttk.Separator(self.mf_2_3, orient="horizontal")
+        self.divider_2 = ttk.Separator(self.mf_2_4, orient="horizontal")
         self.divider_2.pack(side="left", fill="x", expand=True, padx=5, pady=(5, 0))
 
         # -- mf_3_1_l
@@ -339,6 +353,9 @@ class Hush:
 
         self.lbl_vad_status = ttk.Label(self.mf_3_1_l, text="VAD: Off" if sj.cache["vad_mode"] == "Off" else "VAD: On")
         self.lbl_vad_status.pack(side="left", padx=5)
+
+        self.lbl_beep_status = ttk.Label(self.mf_3_1_l, text="")
+        self.lbl_beep_status.pack(side="left", padx=0)
 
         # -- mf_3_1_r
         self.btn_toggle_start_hush = ttk.Button(self.mf_3_1_r, text="Start", command=self.start_hush)
@@ -352,6 +369,8 @@ class Hush:
         gc.running_after_id = self.root.after(1000, self.is_running_poll)
         if sj.cache["checkUpdateOnStart"]:
             self.check_for_update(onStart=True)
+        if sj.cache["no_visual"]:
+            self.no_visual()
         if not sj.cache["keep_log"]:
             self.clear_log(on_start=True)
 
@@ -674,6 +693,27 @@ class Hush:
         except Exception as e:
             logger.exception(e)
 
+    def set_performance_mode(self):
+        x = self.var_performance_mode.get()
+        self.audio_meter.set_performance_mode(x)
+        sj.save_key("performance_mode", x)
+
+    def toggle_visual(self):
+        val = self.var_no_visual.get()
+        if val:
+            self.no_visual()
+        else:
+            self.with_visual()
+        sj.save_key("no_visual", val)
+
+    def no_visual(self):
+        self.audio_meter.stop()
+        self.mf_2_3.pack_forget()
+
+    def with_visual(self):
+        self.audio_meter.start()
+        self.mf_2_3.pack(side="top", fill="x", expand=True)
+
     def close_hush_meter(self):
         self.streaming = False
         self.lbl_vad_status["text"] = "VAD: Off" if sj.cache["vad_mode"] == "Off" else "VAD: On"
@@ -684,7 +724,8 @@ class Hush:
         self.cb_sample_rate["state"] = "readonly"
         self.cb_channel["state"] = "readonly"
 
-        self.audio_meter.set_db(MIN_THRESHOLD)
+        self.audio_meter.set_db(self.min_v)
+        self.audio_meter.meter_update()
         self.audio_meter.stop()
         try:
             if self.stream_rec:
@@ -710,7 +751,7 @@ class Hush:
             self.min_v = db
             self.audio_meter.min = db
 
-        if sj.cache["vad_mode"] != "off":
+        if sj.cache["vad_mode"] != "Off":
             self.is_speech = self.vad.is_speech(in_data, self.detail_device["sample_rate"])
             if self.is_speech:
                 self.lbl_vad_status["text"] = "VAD: On - Speaking"
@@ -718,13 +759,16 @@ class Hush:
                 self.lbl_vad_status["text"] = "VAD: On - Not speaking"
 
         if db < sj.cache["beep_when_reach"]:
+            self.lbl_beep_status["text"] = ""
             return (in_data, pyaudio.paContinue)
 
-        if sj.cache["vad_mode"] == "off":
+        if sj.cache["vad_mode"] == "Off":
+            self.lbl_beep_status["text"] = "Beep!"
             self.play_sound()
             return (in_data, pyaudio.paContinue)
 
         if self.is_speech:
+            self.lbl_beep_status["text"] = "Beep!"
             self.play_sound()
 
         return (in_data, pyaudio.paContinue)
@@ -762,7 +806,11 @@ class Hush:
                     stream_callback=self.hush_meter,
                 )
 
-                self.audio_meter.start()
+                if not sj.cache["no_visual"]:
+                    self.with_visual()
+                else:
+                    self.no_visual()
+
                 self.streaming = True
             else:
                 self.close_hush_meter()

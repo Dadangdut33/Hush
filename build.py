@@ -23,7 +23,7 @@ base = "Win32GUI" if sys.platform == "win32" else None
 setup(
     name="Hush",
     version=version(),
-    description="A simple app that notifies you to be silence by beeping when you are too loud",
+    description="Hush, keep quiet!",
     options={
         "build_exe": build_exe_options,
         "bdist_msi": bdist_msi_options

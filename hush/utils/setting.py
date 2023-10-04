@@ -13,12 +13,14 @@ default_setting = {
     "version": __setting_version__,
     "checkUpdateOnStart": True,
     "keep_log": False,
+    "no_visual": False,
+    "performance_mode": True,
     # ------------------ #
     "hostAPI": "",
     "device": "",
     "sample_rate": "16000",  # 8000, 16000, 32000, 48000
     "channel": "Mono",  # Mono, Stereo
-    "vad_mode": "2",  # Off, 1, 2, 3
+    "vad_mode": "Off",  # Off, 1, 2, 3
     "custom_beep_path": "",
     "beep_volume": 80,
     "beep_when_reach": -8.0,  # db
