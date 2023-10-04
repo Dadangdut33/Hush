@@ -1,5 +1,12 @@
 import sys
+import os
 from cx_Freeze import setup, Executable
+
+
+def version():
+    with open(os.path.join(os.path.dirname(__file__), "hush/_version.py")) as f:
+        return f.readline().split("=")[1].strip().strip('"').strip("'")
+
 
 build_exe_options = {"excludes": ["unittest"], "build_exe": "build/Hush"}
 
@@ -15,7 +22,7 @@ base = "Win32GUI" if sys.platform == "win32" else None
 
 setup(
     name="Hush",
-    version="1.0.0",
+    version=version(),
     description="A simple app that notifies you to be silence by beeping when you are too loud",
     options={
         "build_exe": build_exe_options,
@@ -23,3 +30,18 @@ setup(
     },
     executables=[Executable("Run.py", base=base, icon="hush/assets/icon.ico", target_name="Hush.exe")],
 )
+
+print("Copying files...")
+# copy Lincese as license.txt to build/Hush
+with open("LICENSE", "r", encoding="utf-8") as f:
+    with open("build/Hush/license.txt", "w", encoding="utf-8") as f2:
+        f2.write(f.read())
+
+# copy README.md as README.txt to build/Hush
+with open("README.md", "r", encoding="utf-8") as f:
+    with open("build/Hush/README.txt", "w", encoding="utf-8") as f2:
+        f2.write(f.read())
+
+# create version.txt
+with open("build/Hush/version.txt", "w", encoding="utf-8") as f:
+    f.write(version())
