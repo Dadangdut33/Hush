@@ -148,7 +148,9 @@ class Hush:
         self.help_menu = Menu(self.menu, tearoff=False)
         self.help_menu.add_command(label="About", command=self.about)
         self.help_menu.add_command(label="Check for updates", command=lambda: self.check_for_update())
-        self.help_menu.add_command(label="Visit App Repository", command=lambda: OpenUrl("https://github.com/Dadangdut33/Hush/"))
+        self.help_menu.add_command(
+            label="Visit App Repository", command=lambda: OpenUrl("https://github.com/Dadangdut33/Hush/")
+        )
         self.menu.add_cascade(label="Help", menu=self.help_menu)
 
         # frame is divided into 3 main part

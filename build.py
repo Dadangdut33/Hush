@@ -1,9 +1,7 @@
 import sys
 from cx_Freeze import setup, Executable
 
-build_exe_options = {
-    "excludes": ["unittest"],
-}
+build_exe_options = {"excludes": ["unittest"], "build_exe": "build/Hush"}
 
 bdist_msi_options = {
     "add_to_path": False,

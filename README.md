@@ -76,7 +76,7 @@ If you are using the installer version, you can run the uninstaller. If you are 
 
 ## Building
 
-The app is build using cx_freeze. To build, run `python build.py build_exe`. The built app will be in the `build` folder. To make the installer, you can also run `python build.py bdist_msi` but this is limited so i use [inno setup](https://jrsoftware.org/isinfo.php) with the script located in [./installer.iss]
+The app is build using cx_freeze. To build, run `python build.py build_exe`. The built app will be in the `build` folder. To make the installer, you can also run `python build.py bdist_msi` but this is limited so i use [inno setup](https://jrsoftware.org/isinfo.php) which you can follow the example script located in [installer_example.iss](./installer_example.iss)
 
 # Attribution
 
