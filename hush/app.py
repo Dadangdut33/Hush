@@ -79,7 +79,7 @@ class AppTray:
             item("Hidden onclick", self.open_app, default=True, visible=False),  # onclick the icon will open_app
         )
         self.menu = menu(*self.menu_items)
-        self.icon = icon(APP_NAME, trayIco, f"Speech Translate V{__version__}", self.menu)
+        self.icon = icon(APP_NAME, trayIco, f"Hush {__version__}", self.menu)
         self.icon.run_detached()
 
     # -- Open app
